@@ -1,0 +1,999 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Green City Capitalist - Board Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes moveToken {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(var(--move-x), var(--move-y)); }
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .spinning {
+            animation: spin 2s linear;
+        }
+        
+        @keyframes rollDice {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        
+        .rolling {
+            animation: rollDice 0.5s ease-in-out;
+        }
+        
+        .board-container {
+            position: relative;
+            width: 600px;
+            height: 600px;
+        }
+        
+        .board-tile {
+            border: 2px solid #333;
+            position: relative;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .board-tile.corner {
+            background: #e0e0e0;
+            font-weight: bold;
+        }
+        
+        .board-tile.developed {
+            background: #bbf7d0;
+        }
+        
+        .player-token {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            position: absolute;
+            border: 2px solid #000;
+            z-index: 10;
+            transition: all 0.5s ease-in-out;
+        }
+        
+        .player1-token { background: #3b82f6; }
+        .player2-token { background: #10b981; }
+        .player3-token { background: #ef4444; }
+        
+        .dice {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            background: white;
+            margin: 0 5px;
+        }
+        
+        .wheel-segment {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .wheel-segment:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4 max-w-7xl">
+        <!-- Game Title -->
+        <div class="text-center mb-4">
+            <h1 class="text-4xl font-bold text-green-600">Green City Capitalist</h1>
+            <p class="text-gray-600">Build a sustainable city while maximizing profits! (最多3人游戏)</p>
+        </div>
+        
+        <!-- Game Info Bar -->
+        <div class="bg-white rounded-lg shadow-md p-3 mb-4 flex justify-between items-center">
+            <div class="font-semibold">
+                Round: <span id="currentRound" class="text-green-600">1</span> / 10
+            </div>
+            <div class="font-semibold">
+                Current Player: <span id="currentPlayer" class="text-blue-600">Player 1</span>
+            </div>
+            <div class="font-semibold text-purple-600" id="phaseInfo">
+                Movement Phase - Roll Dice!
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-4">
+            <!-- Left Column: Board -->
+            <div class="col-span-2">
+                <div class="bg-white rounded-lg shadow-lg p-4">
+                    <!-- Game Board -->
+                    <div class="board-container mx-auto relative">
+                        <div class="grid grid-cols-7 gap-0 w-full h-full">
+                            <!-- Top Row -->
+                            <div class="board-tile corner col-start-1" id="tile-0">
+                                <div class="text-xs">START</div>
+                                <div class="text-green-600 font-bold">+5💰 +3🌱</div>
+                            </div>
+                            <div class="board-tile" id="tile-1">
+                                <div>Park Zone</div>
+                                <div class="text-xs text-gray-600">Tile 1</div>
+                            </div>
+                            <div class="board-tile" id="tile-2">
+                                <div>Solar Farm</div>
+                                <div class="text-xs text-gray-600">Tile 2</div>
+                            </div>
+                            <div class="board-tile" id="tile-3">
+                                <div>Tech Hub</div>
+                                <div class="text-xs text-gray-600">Tile 3</div>
+                            </div>
+                            <div class="board-tile" id="tile-4">
+                                <div>Eco Mall</div>
+                                <div class="text-xs text-gray-600">Tile 4</div>
+                            </div>
+                            <div class="board-tile" id="tile-5">
+                                <div>Wind Power</div>
+                                <div class="text-xs text-gray-600">Tile 5</div>
+                            </div>
+                            <div class="board-tile corner" id="tile-6">
+                                <div class="text-xs">EVENT</div>
+                                <div class="text-purple-600">🎯</div>
+                            </div>
+                            
+                            <!-- Right Column -->
+                            <div class="board-tile col-start-7" id="tile-7">
+                                <div>Green Office</div>
+                                <div class="text-xs text-gray-600">Tile 7</div>
+                            </div>
+                            <div class="board-tile col-start-7" id="tile-8">
+                                <div>Recycling</div>
+                                <div class="text-xs text-gray-600">Tile 8</div>
+                            </div>
+                            <div class="board-tile col-start-7" id="tile-9">
+                                <div>Water Plant</div>
+                                <div class="text-xs text-gray-600">Tile 9</div>
+                            </div>
+                            <div class="board-tile col-start-7" id="tile-10">
+                                <div>Bike Lane</div>
+                                <div class="text-xs text-gray-600">Tile 10</div>
+                            </div>
+                            <div class="board-tile col-start-7" id="tile-11">
+                                <div>Urban Farm</div>
+                                <div class="text-xs text-gray-600">Tile 11</div>
+                            </div>
+                            
+                            <!-- Bottom Row -->
+                            <div class="board-tile corner col-start-7" id="tile-12">
+                                <div class="text-xs">PROJECT</div>
+                                <div class="text-blue-600">💼</div>
+                            </div>
+                            <div class="board-tile col-start-6" id="tile-13">
+                                <div>Green Bank</div>
+                                <div class="text-xs text-gray-600">Tile 13</div>
+                            </div>
+                            <div class="board-tile col-start-5" id="tile-14">
+                                <div>Eco School</div>
+                                <div class="text-xs text-gray-600">Tile 14</div>
+                            </div>
+                            <div class="board-tile col-start-4" id="tile-15">
+                                <div>Clean Bus</div>
+                                <div class="text-xs text-gray-600">Tile 15</div>
+                            </div>
+                            <div class="board-tile col-start-3" id="tile-16">
+                                <div>Smart Grid</div>
+                                <div class="text-xs text-gray-600">Tile 16</div>
+                            </div>
+                            <div class="board-tile col-start-2" id="tile-17">
+                                <div>Tree Plaza</div>
+                                <div class="text-xs text-gray-600">Tile 17</div>
+                            </div>
+                            
+                            <!-- Left Column -->
+                            <div class="board-tile corner col-start-1 row-start-7" id="tile-18">
+                                <div class="text-xs">BONUS</div>
+                                <div class="text-yellow-600">⭐</div>
+                            </div>
+                            <div class="board-tile col-start-1 row-start-6" id="tile-19">
+                                <div>Lab District</div>
+                                <div class="text-xs text-gray-600">Tile 19</div>
+                            </div>
+                            <div class="board-tile col-start-1 row-start-5" id="tile-20">
+                                <div>Metro Line</div>
+                                <div class="text-xs text-gray-600">Tile 20</div>
+                            </div>
+                            <div class="board-tile col-start-1 row-start-4" id="tile-21">
+                                <div>Eco Hotel</div>
+                                <div class="text-xs text-gray-600">Tile 21</div>
+                            </div>
+                            <div class="board-tile col-start-1 row-start-3" id="tile-22">
+                                <div>Green Port</div>
+                                <div class="text-xs text-gray-600">Tile 22</div>
+                            </div>
+                            <div class="board-tile col-start-1 row-start-2" id="tile-23">
+                                <div>Solar Road</div>
+                                <div class="text-xs text-gray-600">Tile 23</div>
+                            </div>
+                            
+                            <!-- Center Area for Dice and Info -->
+                            <div class="col-start-2 col-span-5 row-start-2 row-span-5 flex items-center justify-center">
+                                <div class="text-center">
+                                    <h3 class="text-lg font-bold mb-4">Dice Roll</h3>
+                                    <div class="mb-4">
+                                        <div id="dice1" class="dice">?</div>
+                                        <div id="dice2" class="dice">?</div>
+                                    </div>
+                                    <button id="rollDiceBtn" onclick="rollDice()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                                        🎲 Roll Dice
+                                    </button>
+                                    <div id="diceResult" class="mt-2 font-semibold"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Player Tokens -->
+                        <div id="player1Token" class="player-token player1-token"></div>
+                        <div id="player2Token" class="player-token player2-token"></div>
+                        <div id="player3Token" class="player-token player3-token"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column: Player Info and Controls -->
+            <div class="space-y-4">
+                <!-- Player Stats -->
+                <div class="bg-white rounded-lg shadow-lg p-4">
+                    <h3 class="text-lg font-bold mb-3">Player Status</h3>
+                    
+                    <!-- Player 1 -->
+                    <div class="mb-3 p-3 bg-blue-50 rounded" id="player1Panel">
+                        <h4 class="font-bold text-blue-600">Player 1</h4>
+                        <div class="text-sm space-y-1">
+                            <div>💰 Funds: <span id="player1Funds" class="font-bold">10</span></div>
+                            <div>🌱 Green: <span id="player1Green" class="font-bold">0</span></div>
+                            <div>⭐ Influence: <span id="player1Influence" class="font-bold">0</span></div>
+                            <div>📍 Position: <span id="player1Position" class="font-bold">0</span></div>
+                            <div class="text-xs text-gray-600">Goal: <span id="player1Goal">Hidden</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Player 2 -->
+                    <div class="mb-3 p-3 bg-green-50 rounded" id="player2Panel">
+                        <h4 class="font-bold text-green-600">Player 2</h4>
+                        <div class="text-sm space-y-1">
+                            <div>💰 Funds: <span id="player2Funds" class="font-bold">10</span></div>
+                            <div>🌱 Green: <span id="player2Green" class="font-bold">0</span></div>
+                            <div>⭐ Influence: <span id="player2Influence" class="font-bold">0</span></div>
+                            <div>📍 Position: <span id="player2Position" class="font-bold">0</span></div>
+                            <div class="text-xs text-gray-600">Goal: <span id="player2Goal">Hidden</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Player 3 -->
+                    <div class="mb-3 p-3 bg-red-50 rounded" id="player3Panel">
+                        <h4 class="font-bold text-red-600">Player 3</h4>
+                        <div class="text-sm space-y-1">
+                            <div>💰 Funds: <span id="player3Funds" class="font-bold">10</span></div>
+                            <div>🌱 Green: <span id="player3Green" class="font-bold">0</span></div>
+                            <div>⭐ Influence: <span id="player3Influence" class="font-bold">0</span></div>
+                            <div>📍 Position: <span id="player3Position" class="font-bold">0</span></div>
+                            <div class="text-xs text-gray-600">Goal: <span id="player3Goal">Hidden</span></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="bg-white rounded-lg shadow-lg p-4">
+                    <h3 class="text-lg font-bold mb-3">Actions</h3>
+                    
+                    <!-- Bidding Phase Actions -->
+                    <div id="biddingActions" class="space-y-2 hidden">
+                        <button class="w-full bg-purple-500 text-white px-3 py-2 rounded hover:bg-purple-600 text-sm" onclick="bidProject('solo')">
+                            💼 Solo Bid (Cost: 5)
+                        </button>
+                        <button class="w-full bg-purple-500 text-white px-3 py-2 rounded hover:bg-purple-600 text-sm" onclick="bidProject('joint')">
+                            🤝 Joint Bid (Cost: 3)
+                        </button>
+                        <button class="w-full bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 text-sm" onclick="skipBidding()">
+                            ⏭️ Skip Bidding
+                        </button>
+                    </div>
+                    
+                    <!-- Personal Actions -->
+                    <div id="personalActions" class="space-y-2 hidden">
+                        <button class="w-full bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600 text-sm" onclick="takeAction('environmental')">
+                            🌱 Environmental (Roll 2 dice)
+                        </button>
+                        <button class="w-full bg-yellow-500 text-white px-3 py-2 rounded hover:bg-yellow-600 text-sm" onclick="takeAction('commercial')">
+                            💰 Commercial (Roll 1 die ×2)
+                        </button>
+                        <button class="w-full bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 text-sm" onclick="takeAction('rest')">
+                            😴 Rest (+1 Fund, +1 Green)
+                        </button>
+                        <button class="w-full bg-orange-500 text-white px-3 py-2 rounded hover:bg-orange-600 text-sm" onclick="takeAction('construct')">
+                            🏗️ Construct (Cost: 3)
+                        </button>
+                    </div>
+                    
+                    <!-- Movement Phase Info -->
+                    <div id="movementInfo" class="text-center text-gray-600">
+                        <p class="text-sm">等待 <span id="waitingPlayerName">Player 1</span> 掷色子移动</p>
+                        <p class="text-xs mt-1">掷色子后将进入投标阶段</p>
+                    </div>
+                </div>
+                
+                <!-- Event Wheel -->
+                <div class="bg-white rounded-lg shadow-lg p-4">
+                    <h3 class="text-lg font-bold mb-3 text-center">Event Wheel</h3>
+                    <svg id="eventWheel" width="200" height="200" viewBox="0 0 200 200" class="mx-auto mb-2">
+                        <g id="wheelSegments" transform="translate(100,100)"></g>
+                        <circle cx="100" cy="100" r="15" fill="#333"/>
+                        <polygon points="100,20 95,10 105,10" fill="#ff0000"/>
+                    </svg>
+                    <button id="spinWheelBtn" class="w-full bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600 text-sm" onclick="spinWheel()">
+                        🎡 Spin Wheel
+                    </button>
+                    <div id="eventResult" class="mt-2 text-sm text-center font-semibold"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Log -->
+        <div class="mt-4 bg-white rounded-lg shadow-lg p-4">
+            <h3 class="text-lg font-bold mb-2">Game Log</h3>
+            <div id="gameLog" class="h-24 overflow-y-auto text-sm space-y-1 text-gray-700">
+                <div>Welcome to Green City Capitalist! (3 players max)</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md">
+            <h2 class="text-2xl font-bold mb-4">Game Over!</h2>
+            <div id="finalResults" class="space-y-2 mb-4"></div>
+            <button onclick="location.reload()" class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                New Game
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Game State
+        const gameState = {
+            currentRound: 1,
+            currentPlayer: 1,
+            phase: 'movement', // 'movement', 'bidding', 'personal'
+            movementTurn: 1,    // 追踪移动阶段的当前玩家
+            players: [
+                { id: 1, name: 'Player 1', funds: 10, green: 0, influence: 0, position: 0, goal: null, hasActed: false, constructions: [], jointBids: 0, hasMoved: false },
+                { id: 2, name: 'Player 2', funds: 10, green: 0, influence: 0, position: 0, goal: null, hasActed: false, constructions: [], jointBids: 0, hasMoved: false },
+                { id: 3, name: 'Player 3', funds: 10, green: 0, influence: 0, position: 0, goal: null, hasActed: false, constructions: [], jointBids: 0, hasMoved: false }
+            ],
+            boardSize: 24,
+            projectBidders: [],
+            projectWinner: null,
+            eventTriggered: false,
+            diceRolled: false
+        };
+        
+        // Board layout mapping - defines tile positions on the 7x7 grid
+        const tilePositions = [
+            // Top row (tiles 0-6)
+            {row: 1, col: 1}, {row: 1, col: 2}, {row: 1, col: 3}, {row: 1, col: 4}, {row: 1, col: 5}, {row: 1, col: 6}, {row: 1, col: 7},
+            // Right column (tiles 7-11)
+            {row: 2, col: 7}, {row: 3, col: 7}, {row: 4, col: 7}, {row: 5, col: 7}, {row: 6, col: 7},
+            // Bottom row (tiles 12-17)
+            {row: 7, col: 7}, {row: 7, col: 6}, {row: 7, col: 5}, {row: 7, col: 4}, {row: 7, col: 3}, {row: 7, col: 2},
+            // Left column (tiles 18-23)
+            {row: 7, col: 1}, {row: 6, col: 1}, {row: 5, col: 1}, {row: 4, col: 1}, {row: 3, col: 1}, {row: 2, col: 1}
+        ];
+        
+        // Events
+        const events = [
+            { name: 'Government Subsidy', effect: 'All players +2 funds' },
+            { name: 'Environmental Crisis', effect: 'All players -2 green' },
+            { name: 'Water Restrictions', effect: 'Next commercial -2' },
+            { name: 'Community Greening', effect: 'Free construction' },
+            { name: 'Land Value Surge', effect: 'Construction +2 bonus' },
+            { name: 'Environmental Audit', effect: 'Lowest green -3 funds' },
+            { name: 'Municipal Rating', effect: 'Builders +3 influence' },
+            { name: 'Investment Failure', effect: 'Commercial nullified' },
+            { name: 'Energy Shortage', effect: 'Need 5+ green to build' },
+            { name: 'Tax Adjustment', effect: 'Funds halved this round' }
+        ];
+        
+        // Hidden Goals
+        const goals = [
+            { name: 'Green Pioneer', condition: '30+ green points', bonus: 5 },
+            { name: 'Real Estate Tycoon', condition: '5+ constructions', bonus: 4 },
+            { name: 'Alliance Leader', condition: '3+ joint bids', bonus: 3 },
+            { name: 'Cash King', condition: 'Most funds', bonus: 4 },
+            { name: 'Balance Master', condition: 'Fund-Green gap ≤2', bonus: 6 },
+            { name: 'Lone Investor', condition: 'No joint bids', bonus: 4 },
+            { name: 'Consistent Developer', condition: 'Act every round', bonus: 3 },
+            { name: 'Single Focus', condition: 'One investment type', bonus: 5 }
+        ];
+        
+        // Initialize game
+        function initGame() {
+            // Assign random goals
+            const shuffledGoals = [...goals].sort(() => Math.random() - 0.5);
+            gameState.players.forEach((player, index) => {
+                player.goal = shuffledGoals[index];
+            });
+            
+            // Initialize wheel
+            initWheel();
+            
+            // Position tokens
+            positionTokens();
+            
+            // Update display
+            updateDisplay();
+            addLog('Game started! Each player begins with 10 funds and a hidden goal.');
+            addLog(`Round ${gameState.currentRound}: ${gameState.players[gameState.movementTurn - 1].name}'s turn - Roll dice to move!`);
+        }
+        
+        // Initialize event wheel
+        function initWheel() {
+            const segments = document.getElementById('wheelSegments');
+            const anglePerSegment = 360 / events.length;
+            
+            events.forEach((event, index) => {
+                const startAngle = index * anglePerSegment;
+                const endAngle = (index + 1) * anglePerSegment;
+                
+                const x1 = 80 * Math.cos((startAngle - 90) * Math.PI / 180);
+                const y1 = 80 * Math.sin((startAngle - 90) * Math.PI / 180);
+                const x2 = 80 * Math.cos((endAngle - 90) * Math.PI / 180);
+                const y2 = 80 * Math.sin((endAngle - 90) * Math.PI / 180);
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', `M 0 0 L ${x1} ${y1} A 80 80 0 0 1 ${x2} ${y2} Z`);
+                path.setAttribute('class', 'wheel-segment');
+                path.setAttribute('fill', index % 2 === 0 ? '#e0e0e0' : '#f0f0f0');
+                path.setAttribute('stroke', '#333');
+                path.setAttribute('stroke-width', '2');
+                
+                segments.appendChild(path);
+            });
+        }
+        
+        // Roll dice
+        function rollDice() {
+            if (gameState.phase !== 'movement' || gameState.diceRolled) {
+                return;
+            }
+            
+            const dice1 = document.getElementById('dice1');
+            const dice2 = document.getElementById('dice2');
+            
+            dice1.classList.add('rolling');
+            dice2.classList.add('rolling');
+            
+            setTimeout(() => {
+                const roll1 = Math.floor(Math.random() * 6) + 1;
+                const roll2 = Math.floor(Math.random() * 6) + 1;
+                const total = roll1 + roll2;
+                
+                dice1.textContent = roll1;
+                dice2.textContent = roll2;
+                dice1.classList.remove('rolling');
+                dice2.classList.remove('rolling');
+                
+                document.getElementById('diceResult').textContent = `Total: ${total}`;
+                
+                // Move current player
+                movePlayer(gameState.movementTurn, total);
+                gameState.players[gameState.movementTurn - 1].hasMoved = true;
+                gameState.diceRolled = true;
+                
+                addLog(`${gameState.players[gameState.movementTurn - 1].name} rolled ${roll1} + ${roll2} = ${total}`);
+                
+                // Check if all players have moved
+                setTimeout(() => {
+                    const allMoved = gameState.players.every(p => p.hasMoved);
+                    
+                    if (allMoved) {
+                        // All players moved, go to bidding phase
+                        gameState.phase = 'bidding';
+                        gameState.currentPlayer = 1; // Start bidding from player 1
+                        gameState.diceRolled = false;
+                        addLog('All players have moved. Starting bidding phase.');
+                    } else {
+                        // Move to next player
+                        gameState.movementTurn = (gameState.movementTurn % 3) + 1;
+                        gameState.diceRolled = false;
+                        addLog(`${gameState.players[gameState.movementTurn - 1].name}'s turn to roll dice!`);
+                    }
+                    
+                    updateDisplay();
+                }, 1000);
+            }, 500);
+        }
+        
+        // Move player on board
+        function movePlayer(playerId, steps) {
+            const player = gameState.players[playerId - 1];
+            const oldPosition = player.position;
+            player.position = (player.position + steps) % gameState.boardSize;
+            
+            // Check if passed START
+            if ((oldPosition + steps) >= gameState.boardSize) {
+                player.funds += 5;
+                player.green += 3;
+                addLog(`${player.name} passed START! +5 funds, +3 green`);
+            }
+            
+            // Check for construction benefits
+            const tile = player.position;
+            const construction = gameState.players.find(p => 
+                p.constructions.includes(tile)
+            );
+            
+            if (construction && construction.id === playerId) {
+                player.funds += 5;
+                player.green += 5;
+                addLog(`${player.name} landed on their construction! +5 funds, +5 green`);
+            }
+            
+            positionTokens();
+            updateDisplay();
+        }
+        
+        // Position tokens on board - Fixed version
+        function positionTokens() {
+            const boardContainer = document.querySelector('.board-container');
+            const containerWidth = 600;
+            const containerHeight = 600;
+            const tileWidth = containerWidth / 7;
+            const tileHeight = containerHeight / 7;
+            
+            gameState.players.forEach((player, index) => {
+                const token = document.getElementById(`player${player.id}Token`);
+                const position = tilePositions[player.position];
+                
+                if (position) {
+                    // Calculate center position of the tile
+                    const x = (position.col - 1) * tileWidth + tileWidth / 2;
+                    const y = (position.row - 1) * tileHeight + tileHeight / 2;
+                    
+                    // Offset multiple players on same tile
+                    const playersOnSameTile = gameState.players.filter(p => p.position === player.position);
+                    const playerIndex = playersOnSameTile.findIndex(p => p.id === player.id);
+                    
+                    let offsetX = 0;
+                    let offsetY = 0;
+                    
+                    if (playersOnSameTile.length > 1) {
+                        const angle = (playerIndex * 2 * Math.PI) / playersOnSameTile.length;
+                        offsetX = Math.cos(angle) * 15;
+                        offsetY = Math.sin(angle) * 15;
+                    }
+                    
+                    token.style.left = `${x + offsetX - 8}px`; // -8 to center the 16px token
+                    token.style.top = `${y + offsetY - 8}px`;
+                }
+            });
+        }
+        
+        // Spin event wheel
+        function spinWheel() {
+            const wheel = document.getElementById('wheelSegments');
+            const spins = Math.floor(Math.random() * 3) + 3;
+            const finalAngle = Math.random() * 360;
+            
+            wheel.classList.add('spinning');
+            wheel.style.transform = `rotate(${spins * 360 + finalAngle}deg)`;
+            
+            setTimeout(() => {
+                wheel.classList.remove('spinning');
+                const eventIndex = Math.floor(((360 - finalAngle) % 360) / (360 / events.length));
+                const event = events[eventIndex];
+                
+                document.getElementById('eventResult').textContent = event.name;
+                applyEventEffect(eventIndex);
+                addLog(`Event: ${event.name} - ${event.effect}`);
+            }, 2000);
+        }
+        
+        // Apply event effects
+        function applyEventEffect(eventIndex) {
+            switch(eventIndex) {
+                case 0: // Government Subsidy
+                    gameState.players.forEach(p => p.funds += 2);
+                    break;
+                case 1: // Environmental Crisis
+                    gameState.players.forEach(p => p.green = Math.max(0, p.green - 2));
+                    break;
+                case 5: // Environmental Audit
+                    const lowestGreen = Math.min(...gameState.players.map(p => p.green));
+                    gameState.players.filter(p => p.green === lowestGreen).forEach(p => {
+                        p.funds = Math.max(0, p.funds - 3);
+                    });
+                    break;
+                case 6: // Municipal Rating
+                    gameState.players.filter(p => p.constructions.length > 0).forEach(p => {
+                        p.influence += 3;
+                    });
+                    break;
+            }
+            updateDisplay();
+        }
+        
+        // Bid on project
+        function bidProject(type) {
+            const player = gameState.players[gameState.currentPlayer - 1];
+            
+            if (type === 'solo' && player.funds < 5) {
+                alert('Insufficient funds for solo bid!');
+                return;
+            }
+            
+            if (type === 'joint' && player.funds < 3) {
+                alert('Insufficient funds for joint bid!');
+                return;
+            }
+            
+            gameState.projectBidders.push({ player, type });
+            
+            if (type === 'joint') {
+                player.jointBids++;
+            }
+            
+            player.hasActed = true;
+            addLog(`${player.name} placed a ${type} bid`);
+            
+            nextPlayer();
+        }
+        
+        // Skip bidding
+        function skipBidding() {
+            const player = gameState.players[gameState.currentPlayer - 1];
+            player.hasActed = true;
+            addLog(`${player.name} skipped bidding`);
+            nextPlayer();
+        }
+        
+        // Take personal action
+        function takeAction(action) {
+            const player = gameState.players[gameState.currentPlayer - 1];
+            
+            switch(action) {
+                case 'environmental':
+                    const dice1 = Math.floor(Math.random() * 6) + 1;
+                    const dice2 = Math.floor(Math.random() * 6) + 1;
+                    const total = dice1 + dice2;
+                    player.green += total;
+                    addLog(`${player.name} environmental investment: ${dice1}+${dice2}=${total} green`);
+                    break;
+                    
+                case 'commercial':
+                    const dice = Math.floor(Math.random() * 6) + 1;
+                    const gain = dice * 2;
+                    player.funds += gain;
+                    addLog(`${player.name} commercial investment: ${dice}×2=${gain} funds`);
+                    break;
+                    
+                case 'rest':
+                    player.funds += 1;
+                    player.green += 1;
+                    addLog(`${player.name} rested: +1 fund, +1 green`);
+                    break;
+                    
+                case 'construct':
+                    if (player.funds < 3) {
+                        alert('Insufficient funds to construct!');
+                        return;
+                    }
+                    player.funds -= 3;
+                    player.constructions.push(player.position);
+                    document.getElementById(`tile-${player.position}`).classList.add('developed');
+                    addLog(`${player.name} constructed on tile ${player.position}`);
+                    break;
+            }
+            
+            player.hasActed = true;
+            updateDisplay();
+            nextPlayer();
+        }
+        
+        // Next player logic
+        function nextPlayer() {
+            if (gameState.phase === 'bidding') {
+                const allActed = gameState.players.every(p => p.hasActed);
+                
+                if (allActed) {
+                    resolveBidding();
+                    gameState.phase = 'personal';
+                    gameState.players.forEach(p => p.hasActed = false);
+                    
+                    const nonWinners = gameState.players.filter(p => p !== gameState.projectWinner);
+                    if (nonWinners.length > 0) {
+                        gameState.currentPlayer = nonWinners[0].id;
+                    }
+                } else {
+                    do {
+                        gameState.currentPlayer = (gameState.currentPlayer % 3) + 1;
+                    } while (gameState.players[gameState.currentPlayer - 1].hasActed);
+                }
+            } else if (gameState.phase === 'personal') {
+                const nonWinners = gameState.players.filter(p => p !== gameState.projectWinner);
+                const allNonWinnersActed = nonWinners.every(p => p.hasActed);
+                
+                if (allNonWinnersActed) {
+                    endRound();
+                } else {
+                    do {
+                        gameState.currentPlayer = (gameState.currentPlayer % 3) + 1;
+                    } while (
+                        gameState.players[gameState.currentPlayer - 1].hasActed ||
+                        gameState.players[gameState.currentPlayer - 1] === gameState.projectWinner
+                    );
+                }
+            }
+            
+            updateDisplay();
+        }
+        
+        // Resolve bidding
+        function resolveBidding() {
+            if (gameState.projectBidders.length === 0) {
+                addLog('No bids placed on project');
+                gameState.projectWinner = null;
+                return;
+            }
+            
+            const winnerIndex = Math.floor(Math.random() * gameState.projectBidders.length);
+            const winner = gameState.projectBidders[winnerIndex];
+            
+            gameState.projectWinner = winner.player;
+            
+            if (winner.type === 'solo') {
+                winner.player.funds -= 5;
+                winner.player.funds += 10;
+                winner.player.green += 5;
+                addLog(`${winner.player.name} won solo bid! -5 funds, +10 funds, +5 green`);
+            } else {
+                winner.player.funds -= 3;
+                winner.player.funds += 6;
+                winner.player.green += 3;
+                addLog(`${winner.player.name} won joint bid! -3 funds, +6 funds, +3 green`);
+            }
+        }
+        
+        // End round
+        function endRound() {
+            gameState.currentRound++;
+            
+            // Check for event trigger (every 2 rounds)
+            if (gameState.currentRound % 2 === 0 && !gameState.eventTriggered) {
+                gameState.eventTriggered = true;
+                setTimeout(() => spinWheel(), 500);
+            } else {
+                gameState.eventTriggered = false;
+            }
+            
+            if (gameState.currentRound > 10) {
+                endGame();
+                return;
+            }
+            
+            // Reset for next round
+            gameState.phase = 'movement';
+            gameState.movementTurn = 1;  // 重置移动轮次
+            gameState.currentPlayer = 1;
+            gameState.projectBidders = [];
+            gameState.projectWinner = null;
+            gameState.diceRolled = false;
+            gameState.players.forEach(p => {
+                p.hasActed = false;
+                p.hasMoved = false;  // 重置移动状态
+            });
+            
+            addLog(`====== Round ${gameState.currentRound} ======`);
+            addLog(`${gameState.players[gameState.movementTurn - 1].name}'s turn - Roll dice to move!`);
+            updateDisplay();
+        }
+        
+        // End game
+        function endGame() {
+            // Calculate final influence
+            gameState.players.forEach(player => {
+                player.influence = player.green + Math.floor(player.funds / 2);
+                
+                // Check hidden goals
+                if (checkGoalAchieved(player)) {
+                    player.influence += player.goal.bonus;
+                    addLog(`${player.name} achieved ${player.goal.name}: +${player.goal.bonus} influence`);
+                }
+            });
+            
+            // Sort players by influence
+            const sortedPlayers = [...gameState.players].sort((a, b) => {
+                if (b.influence === a.influence) {
+                    return b.funds - a.funds;
+                }
+                return b.influence - a.influence;
+            });
+            
+            // Show results
+            const resultsHtml = sortedPlayers.map((player, index) => `
+                <div class="p-2 bg-gray-100 rounded mb-2">
+                    <div class="font-bold">${index + 1}. ${player.name}</div>
+                    <div class="text-sm">Influence: ${player.influence} (Green: ${player.green}, Funds: ${player.funds})</div>
+                    <div class="text-sm text-gray-600">Goal: ${player.goal.name}</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('finalResults').innerHTML = resultsHtml;
+            document.getElementById('gameOverModal').classList.remove('hidden');
+            
+            addLog(`Game Over! ${sortedPlayers[0].name} wins!`);
+        }
+        
+        // Check goal achievement
+        function checkGoalAchieved(player) {
+            const goal = player.goal;
+            
+            switch(goal.name) {
+                case 'Green Pioneer':
+                    return player.green >= 30;
+                case 'Real Estate Tycoon':
+                    return player.constructions.length >= 5;
+                case 'Alliance Leader':
+                    return player.jointBids >= 3;
+                case 'Cash King':
+                    const maxFunds = Math.max(...gameState.players.map(p => p.funds));
+                    return player.funds === maxFunds;
+                case 'Balance Master':
+                    return Math.abs(player.funds - player.green) <= 2;
+                case 'Lone Investor':
+                    return player.jointBids === 0;
+                default:
+                    return false;
+            }
+        }
+        
+        // Update display
+        function updateDisplay() {
+            // Update round info
+            document.getElementById('currentRound').textContent = gameState.currentRound;
+            
+            // Update current player display based on phase
+            let displayPlayer = '';
+            if (gameState.phase === 'movement') {
+                displayPlayer = gameState.players[gameState.movementTurn - 1].name;
+            } else {
+                displayPlayer = gameState.players[gameState.currentPlayer - 1].name;
+            }
+            document.getElementById('currentPlayer').textContent = displayPlayer;
+            
+            let phaseText = '';
+            if (gameState.phase === 'movement') {
+                phaseText = 'Movement Phase - Roll Dice!';
+                document.getElementById('waitingPlayerName').textContent = gameState.players[gameState.movementTurn - 1].name;
+            } else if (gameState.phase === 'bidding') {
+                phaseText = 'Project Bidding Phase';
+            } else {
+                phaseText = 'Personal Action Phase';
+            }
+            document.getElementById('phaseInfo').textContent = phaseText;
+            
+            // Update player stats
+            gameState.players.forEach(player => {
+                document.getElementById(`player${player.id}Funds`).textContent = player.funds;
+                document.getElementById(`player${player.id}Green`).textContent = player.green;
+                document.getElementById(`player${player.id}Influence`).textContent = player.influence;
+                document.getElementById(`player${player.id}Position`).textContent = player.position;
+                
+                // Highlight current player based on phase
+                const panel = document.getElementById(`player${player.id}Panel`);
+                let isCurrentPlayer = false;
+                
+                if (gameState.phase === 'movement') {
+                    isCurrentPlayer = player.id === gameState.movementTurn;
+                } else {
+                    isCurrentPlayer = player.id === gameState.currentPlayer;
+                }
+                
+                if (isCurrentPlayer) {
+                    panel.classList.add('ring-2', 'ring-yellow-400');
+                } else {
+                    panel.classList.remove('ring-2', 'ring-yellow-400');
+                }
+            });
+            
+            // Show/hide action buttons and info
+            const showBidding = gameState.phase === 'bidding' && !gameState.players[gameState.currentPlayer - 1].hasActed;
+            const showPersonal = gameState.phase === 'personal' && 
+                                gameState.players[gameState.currentPlayer - 1] !== gameState.projectWinner &&
+                                !gameState.players[gameState.currentPlayer - 1].hasActed;
+            const showMovement = gameState.phase === 'movement';
+            
+            document.getElementById('biddingActions').classList.toggle('hidden', !showBidding);
+            document.getElementById('personalActions').classList.toggle('hidden', !showPersonal);
+            document.getElementById('movementInfo').classList.toggle('hidden', !showMovement);
+            
+            // Enable/disable dice button
+            const canRollDice = gameState.phase === 'movement' && !gameState.diceRolled;
+            document.getElementById('rollDiceBtn').disabled = !canRollDice;
+        }
+        
+        // Add log entry
+        function addLog(message) {
+            const log = document.getElementById('gameLog');
+            const entry = document.createElement('div');
+            entry.textContent = `[Round ${gameState.currentRound}] ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // Initialize game on load
+        initGame();
+    </script>
+<script>window.parent.postMessage({ action: "ready" }, "*"); 
+ 
+window.console = new Proxy(console, {
+  get(target, prop) {
+    if (['log', 'warn', 'error'].includes(prop)) {
+      return new Proxy(target[prop], {
+        apply(fn, thisArg, args) {
+          fn.apply(thisArg, args);
+          window.parent.postMessage({ action: 'console', 
+            type: prop, 
+            args: args.map((arg) => {
+              try {
+                return JSON.stringify(arg).replace(/^["']|["']$/g, '');
+              } catch (e) {
+                return arg;
+              }
+            }) 
+          }, '*');
+        }
+      });
+    }
+    return target[prop];
+  }
+});
+</script><script>window.parent.postMessage({ action: "ready" }, "*"); 
+ 
+window.console = new Proxy(console, {
+  get(target, prop) {
+    if (['log', 'warn', 'error'].includes(prop)) {
+      return new Proxy(target[prop], {
+        apply(fn, thisArg, args) {
+          fn.apply(thisArg, args);
+          window.parent.postMessage({ action: 'console', 
+            type: prop, 
+            args: args.map((arg) => {
+              try {
+                return JSON.stringify(arg).replace(/^["']|["']$/g, '');
+              } catch (e) {
+                return arg;
+              }
+            }) 
+          }, '*');
+        }
+      });
+    }
+    return target[prop];
+  }
+});
+</script></body>
+</html>

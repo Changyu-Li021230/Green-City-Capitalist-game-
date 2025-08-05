@@ -104,7 +104,7 @@
             <h1 class="text-4xl font-bold text-green-600">Green City Capitalist</h1>
             <p class="text-gray-600">Build a sustainable city while maximizing profits! (最多3人游戏)</p>
         </div>
-        
+ 
         <!-- Game Info Bar -->
         <div class="bg-white rounded-lg shadow-md p-3 mb-4 flex justify-between items-center">
             <div class="font-semibold">
@@ -117,7 +117,14 @@
                 Movement Phase - Roll Dice!
             </div>
         </div>
-        
+                     <!-- Game Log（粘贴位置） -->  
+<div class="mt-4 bg-white rounded-lg shadow-lg p-4">  
+       <h3 class="text-lg font-bold mb-2">Game Log</h3>  
+     <div id="gameLog" class="h-24 overflow-y-auto text-sm space-y-1 text-gray-700">  
+          <!-- existing log entries will appear here -->  
+      </div>  
+  </div>     
+
         <div class="grid grid-cols-3 gap-4">
             <!-- Left Column: Board -->
             <div class="col-span-2">
@@ -182,23 +189,23 @@
                                 <div class="text-xs">PROJECT</div>
                                 <div class="text-blue-600">💼</div>
                             </div>
-                            <div class="board-tile col-start-6" id="tile-13">
+                            <div class="board-tile row-start-7 col-start-6" id="tile-13">
                                 <div>Green Bank</div>
                                 <div class="text-xs text-gray-600">Tile 13</div>
                             </div>
-                            <div class="board-tile col-start-5" id="tile-14">
+                            <div class="board-tile row-start-7 col-start-5" id="tile-14">
                                 <div>Eco School</div>
                                 <div class="text-xs text-gray-600">Tile 14</div>
                             </div>
-                            <div class="board-tile col-start-4" id="tile-15">
+                            <div class="board-tile row-start-7 col-start-4" id="tile-15">
                                 <div>Clean Bus</div>
                                 <div class="text-xs text-gray-600">Tile 15</div>
                             </div>
-                            <div class="board-tile col-start-3" id="tile-16">
+                            <div class="board-tile row-start-7 col-start-3" id="tile-16">
                                 <div>Smart Grid</div>
                                 <div class="text-xs text-gray-600">Tile 16</div>
                             </div>
-                            <div class="board-tile col-start-2" id="tile-17">
+                            <div class="board-tile row-start-7 col-start-2" id="tile-17">
                                 <div>Tree Plaza</div>
                                 <div class="text-xs text-gray-600">Tile 17</div>
                             </div>
@@ -229,6 +236,7 @@
                                 <div class="text-xs text-gray-600">Tile 23</div>
                             </div>
                             
+
                             <!-- Center Area for Dice and Info -->
                             <div class="col-start-2 col-span-5 row-start-2 row-span-5 flex items-center justify-center">
                                 <div class="text-center">
@@ -244,7 +252,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+          
                         <!-- Player Tokens -->
                         <div id="player1Token" class="player-token player1-token"></div>
                         <div id="player2Token" class="player-token player2-token"></div>
@@ -252,7 +260,7 @@
                     </div>
                 </div>
             </div>
-            
+      
             <!-- Right Column: Player Info and Controls -->
             <div class="space-y-4">
                 <!-- Player Stats -->
@@ -270,7 +278,7 @@
                             <div class="text-xs text-gray-600">Goal: <span id="player1Goal">Hidden</span></div>
                         </div>
                     </div>
-                    
+              
                     <!-- Player 2 -->
                     <div class="mb-3 p-3 bg-green-50 rounded" id="player2Panel">
                         <h4 class="font-bold text-green-600">Player 2</h4>
@@ -282,6 +290,8 @@
                             <div class="text-xs text-gray-600">Goal: <span id="player2Goal">Hidden</span></div>
                         </div>
                     </div>
+
+
                     
                     <!-- Player 3 -->
                     <div class="mb-3 p-3 bg-red-50 rounded" id="player3Panel">
@@ -295,7 +305,7 @@
                         </div>
                     </div>
                 </div>
-                
+  
                 <!-- Action Buttons -->
                 <div class="bg-white rounded-lg shadow-lg p-4">
                     <h3 class="text-lg font-bold mb-3">Actions</h3>
@@ -312,7 +322,8 @@
                             ⏭️ Skip Bidding
                         </button>
                     </div>
-                    
+   
+
                     <!-- Personal Actions -->
                     <div id="personalActions" class="space-y-2 hidden">
                         <button class="w-full bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600 text-sm" onclick="takeAction('environmental')">
@@ -328,14 +339,14 @@
                             🏗️ Construct (Cost: 3)
                         </button>
                     </div>
-                    
+  
                     <!-- Movement Phase Info -->
                     <div id="movementInfo" class="text-center text-gray-600">
                         <p class="text-sm">等待 <span id="waitingPlayerName">Player 1</span> 掷色子移动</p>
                         <p class="text-xs mt-1">掷色子后将进入投标阶段</p>
                     </div>
                 </div>
-                
+
                 <!-- Event Wheel -->
                 <div class="bg-white rounded-lg shadow-lg p-4">
                     <h3 class="text-lg font-bold mb-3 text-center">Event Wheel</h3>
@@ -351,14 +362,9 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Game Log -->
-        <div class="mt-4 bg-white rounded-lg shadow-lg p-4">
-            <h3 class="text-lg font-bold mb-2">Game Log</h3>
-            <div id="gameLog" class="h-24 overflow-y-auto text-sm space-y-1 text-gray-700">
-                <div>Welcome to Green City Capitalist! (3 players max)</div>
-            </div>
-        </div>
+
+
+
     </div>
     
     <!-- Game Over Modal -->
@@ -372,6 +378,7 @@
         </div>
     </div>
     
+
     <script>
         // Game State
         const gameState = {

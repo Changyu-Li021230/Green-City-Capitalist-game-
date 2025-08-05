@@ -4,7 +4,7 @@ A turn-based strategy board game that challenges players to balance capitalism a
 
 > **Designed and prototyped by:**  
 > Changyu Li  
-> [View Presentation Slides (PDF)](https://github.com/Changyu-Li021230/Green-City-Capitalist-CP2412)
+
 
 ---
 
